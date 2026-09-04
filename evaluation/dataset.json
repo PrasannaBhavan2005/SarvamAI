@@ -1,0 +1,45 @@
+[
+  {
+    "id": "case_1_provided_brief",
+    "description": "Standard provided brief case replacing Aditya and Kiwi",
+    "seed_terms": [
+      {"term": "Aaditya", "category": "person"},
+      {"term": "Kivi", "category": "brand"}
+    ],
+    "asr_input": "ask aditya to review the sarvam kiwi service",
+    "formatted_input": "Ask Aditya to review the Sarvam Kiwi service.",
+    "expected_output": "Ask Aaditya to review the Sarvam Kivi service.",
+    "should_intervene": true
+  },
+  {
+    "id": "case_2_deliberate_inaction_fruit",
+    "description": "System should do nothing when canonical word matches plain English",
+    "seed_terms": [
+      {"term": "Kivi", "category": "brand"}
+    ],
+    "asr_input": "i bought a kiwi from the supermarket",
+    "formatted_input": "I bought a kiwi from the supermarket.",
+    "expected_output": "I bought a kiwi from the supermarket.",
+    "should_intervene": false
+  },
+  {
+    "id": "case_3_indian_name_variation",
+    "description": "Correcting speech recognition variant of Karthik",
+    "seed_terms": [
+      {"term": "Karthick", "category": "person"}
+    ],
+    "asr_input": "call karthik regarding the deployment",
+    "formatted_input": "Call Karthik regarding the deployment.",
+    "expected_output": "Call Karthick regarding the deployment.",
+    "should_intervene": true
+  },
+  {
+    "id": "case_4_zero_memory_inaction",
+    "description": "System makes no changes when no matching phonetic memories exist",
+    "seed_terms": [],
+    "asr_input": "the quick brown fox jumps over the lazy dog",
+    "formatted_input": "The quick brown fox jumps over the lazy dog.",
+    "expected_output": "The quick brown fox jumps over the lazy dog.",
+    "should_intervene": false
+  }
+]

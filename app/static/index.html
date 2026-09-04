@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kivi Memory Demonstration</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 24px; }
+    .container { max-width: 1000px; margin: auto; }
+    h1 { color: #4ade80; margin-bottom: 4px; }
+    p.subtitle { color: #94a3b8; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: #1e293b; border-radius: 8px; padding: 20px; border: 1px solid #334155; }
+    label { display: block; font-size: 13px; font-weight: bold; margin-top: 10px; color: #cbd5e1; }
+    input, textarea, button { width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 14px; }
+    button { cursor: pointer; font-weight: bold; border: none; margin-top: 16px; }
+    .btn-primary { background: #22c55e; color: #052e16; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    pre { background: #020617; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px; color: #a5f3fc; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; }
+    th { color: #94a3b8; }
+    .badge { background: #334155; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Kivi Phonetic Memory</h1>
+  <p class="subtitle">Word-level adaptive memory demonstration & transparency log</p>
+
+  <div class="grid">
+    <!-- Left: Learning & Observation -->
+    <div class="card">
+      <h3>1. Record Observation (Learn)</h3>
+      <label>Canonical Term</label>
+      <input type="text" id="learnTerm" placeholder="e.g., Aaditya, Kivi">
+      <label>Category</label>
+      <input type="text" id="learnCategory" value="person" placeholder="person, brand, tech">
+      <label>Context Hint (Optional)</label>
+      <input type="text" id="learnHint" placeholder="e.g., engineer, company product">
+      <button class="btn-primary" onclick="learnWord()">Learn Observation</button>
+      <button class="btn-danger" onclick="resetMemory()" style="margin-top: 10px;">Reset All Memory</button>
+    </div>
+
+    <!-- Right: Test Resolver -->
+    <div class="card">
+      <h3>2. Transcript Resolver</h3>
+      <label>ASR Output (Level 1)</label>
+      <textarea id="asrInput" rows="2">ask aditya to review the sarvam kiwi service</textarea>
+      <label>Formatted Output (Level 2)</label>
+      <textarea id="formattedInput" rows="2">Ask Aditya to review the Sarvam Kiwi service.</textarea>
+      <button class="btn-primary" onclick="resolveTranscript()">Produce Memory-Aware Transcript</button>
+    </div>
+  </div>
+
+  <!-- Resolution Result -->
+  <div class="card" style="margin-top: 20px;">
+    <h3>Memory-Aware Output (Level 3)</h3>
+    <pre id="outputResult">Awaiting input...</pre>
+    <h4>Intervention & Transparency Logs</h4>
+    <pre id="outputLogs">No interventions executed yet.</pre>
+  </div>
+
+  <!-- Memory State -->
+  <div class="card" style="margin-top: 20px;">
+    <h3>Active Memory State</h3>
+    <table id="memoryTable">
+      <thead>
+        <tr>
+          <th>Canonical</th>
+          <th>Category</th>
+          <th>Metaphone</th>
+          <th>Frequency</th>
+          <th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  async function fetchMemory() {
+    const res = await fetch('/api/memory');
+    const data = await res.json();
+    const tbody = document.querySelector('#memoryTable tbody');
+    tbody.innerHTML = '';
+    data.forEach(item => {
+      tbody.innerHTML += `<tr>
+        <td><b>${item.canonical_term}</b></td>
+        <td><span class="badge">${item.category}</span></td>
+        <td><code>${item.metaphone || ''}</code></td>
+        <td>${item.frequency}</td>
+        <td>${item.confidence.toFixed(2)}</td>
+      </tr>`;
+    });
+  }
+
+  async function learnWord() {
+    const term = document.getElementById('learnTerm').value.trim();
+    if (!term) return alert('Enter a term');
+    await fetch('/api/learn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        canonical_term: term,
+        category: document.getElementById('learnCategory').value,
+        context_hint: document.getElementById('learnHint').value
+      })
+    });
+    document.getElementById('learnTerm').value = '';
+    fetchMemory();
+  }
+
+  async function resolveTranscript() {
+    const asr = document.getElementById('asrInput').value;
+    const formatted = document.getElementById('formattedInput').value;
+    const res = await fetch('/api/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asr_text: asr, formatted_text: formatted })
+    });
+    const data = await res.json();
+    document.getElementById('outputResult').innerText = data.memory_aware_text;
+    document.getElementById('outputLogs').innerText = JSON.stringify(data.logs, null, 2);
+  }
+
+  async function resetMemory() {
+    if (!confirm('Clear all stored memories?')) return;
+    await fetch('/api/reset', { method: 'POST' });
+    fetchMemory();
+    document.getElementById('outputResult').innerText = 'Memory reset.';
+    document.getElementById('outputLogs').innerText = '[]';
+  }
+
+  fetchMemory();
+</script>
+</body>
+</html>
